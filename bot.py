@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, CallbackQuery
 from deep_translator import GoogleTranslator
 from gtts import gTTS
 from secure import TG_TOKEN, OPEN_WEATHERMAP
@@ -9,6 +9,7 @@ from data import JOKES, TRAININGS
 from random import choice
 import os
 import requests
+import keyboards as kb
 
 
 bot = Bot(token=TG_TOKEN)
@@ -89,6 +90,19 @@ async def audio_message_save(message: Message):
     except Exception as e:
         await message.answer(f"Произошла ошибка при загрузке файла: {str(e)}")
 
+
+
+
+@dispatcher.message(F.text == 'Привет')
+async def test_button1(message: Message):
+    await message.answer(f'Привет {message.from_user.first_name}!')
+
+
+@dispatcher.message(F.text == 'Пока')
+async def test_button1(message: Message):
+    await message.answer(f'До свидания {message.from_user.first_name}!')
+
+
 @dispatcher.message(Command('help'))
 async def help(message: Message):
     await message.answer('Этот бот умеет выполнять комманды \n'
@@ -102,6 +116,29 @@ async def help(message: Message):
 @dispatcher.message(Command('joke'))
 async def jokes(message: Message):
     await message.answer(choice(JOKES))
+
+
+@dispatcher.message(Command('links'))
+async def jokes(message: Message):
+    await message.answer('Мои любимые ссылки :', reply_markup=kb.inline_keyboard)
+
+
+@dispatcher.callback_query(F.data == 'more')
+async def more(callback:CallbackQuery):
+    await callback.answer('Выбор опций формируется', show_alert=True)
+    await callback.message.edit_text('Вот Ваши опции:', reply_markup= await kb.option_keyboard())
+
+
+@dispatcher.callback_query(lambda c: c.data.startswith('option'))
+async def option(callback_query: CallbackQuery):
+    options, button_text = callback_query.data.split(':')
+    await callback_query.message.answer(f'Вы выбрали: {button_text}')
+    await callback_query.answer()
+
+
+@dispatcher.message(Command('dynamic'))
+async def jokes(message: Message):
+    await message.answer(text='Динамическое меню',reply_markup=kb.inline_keyboard_more)
 
 
 @dispatcher.message(Command('forecast'))
@@ -168,7 +205,7 @@ async def voice(message: Message):
 async def start(message: Message):
     await message.answer(f'Привет, {message.from_user.first_name}! Меня зовут Ларс и я Бот! С большой буквы!! '
                          f'Вы можете отправить мне фото и я скажу свое мнение о нем. Если Вы просто введете текст'
-                         f' я переведу его на дргой язык')
+                         f' я переведу его на дргой язык', reply_markup=kb.main)
 
 
 @dispatcher.message()
